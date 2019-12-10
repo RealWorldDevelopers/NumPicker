@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+    <AspNetCoreModuleName>AspNetCoreModule</AspNetCoreModuleName>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="CSM.SodaDotNet" Version="0.10.1" />
+    <PackageReference Include="CSM.SodaDotNet.Utilities" Version="0.10.1" />
+    <PackageReference Include="Microsoft.AspNetCore.AzureKeyVault.HostingStartup" Version="2.0.4" />
+    <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="3.0.4" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.3.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="RWD.Toolboox.Ui.Middleware.SecurityHeaders" Version="1.0.0" />
+    <PackageReference Include="RWD.Toolbox.Ui.Middleware.CspHeader" Version="1.0.0" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="4.6.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services" />
+  </ItemGroup>
+
+</Project>

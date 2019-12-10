@@ -1,0 +1,62 @@
+﻿@model NumPicker.Models.DrawingViewModel
+@{
+    ViewData["Title"] = "Mega Millions";
+}
+
+<div class="jumbotron">
+    <h1>Mega Millions</h1>
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr>Next Draw Date: @Model.NextDrawDate.ToShortDateString()</tr>
+            <tr>
+                <th>Ball 1</th>
+                <th>Ball 2</th>
+                <th>Ball 3</th>
+                <th>Ball 4</th>
+                <th>Ball 5</th>
+                <th>Mega Ball</th>
+            </tr>
+        </thead>
+        <tbody id="pickTableBody">
+            @foreach (var p in Model.Predictions)
+            {
+                <tr>
+                    @foreach (var b in p.Balls)
+                    {
+                        <td>@b.Id</td>
+                    }
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex flex-row-reverse">
+    <button id="btnAdd" class="btn btn-lg btn-light">Manual Add Selected Numbers to Pick List</button>
+</div>
+
+<div class="card-group">
+
+    @for (int i = 1; i < 6; i++)
+    {
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="card-title">Ball @i</h4>
+                <div class="card-text">
+                    <select class="custom-select" asp-for="Balls[i-1].Ball" asp-items="Model.Balls[i-1].BallOptions" size="5"></select>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body text-center">
+            <h4 class="card-title">Mega Ball</h4>
+            <div class="card-text">
+                <select class="custom-select" asp-for="Balls[5].Ball" asp-items="Model.Balls[5].BallOptions" size="5"></select>
+            </div>
+        </div>
+    </div>
+</div>
+
