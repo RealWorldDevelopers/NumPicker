@@ -26,13 +26,13 @@ namespace NumPicker.Controllers
         {
             return View();
         }
-        
+
         public IActionResult MegaMillions()
         {
             // get drawing records
             var sodaHost = _appSettings.MegaMillions.HostUrl;
             var soda4x4 = _appSettings.MegaMillions.TableId;
-            var sodaAppToken = _appSettings.SODA.AppToken; 
+            var sodaAppToken = _appSettings.SODA.AppToken;
 
             var client = new SodaClient(sodaHost, sodaAppToken);
 
@@ -53,7 +53,7 @@ namespace NumPicker.Controllers
             var ballCount = _appSettings.MegaMillions.BallCount;
 
             // calculate next drawing date
-            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Tuesday, DayOfWeek.Thursday });            
+            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Tuesday, DayOfWeek.Thursday });
 
             // build base drawing collection
             foreach (var draw in results)
@@ -86,7 +86,7 @@ namespace NumPicker.Controllers
             return View(model);
 
         }
-        
+
         public IActionResult Powerball()
         {
             // get drawing records
@@ -113,7 +113,7 @@ namespace NumPicker.Controllers
             var ballCount = _appSettings.Powerball.BallCount;
 
             // calculate next drawing date
-            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Wednesday, DayOfWeek.Saturday });            
+            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Wednesday, DayOfWeek.Saturday });
 
             // build base drawing collection
             foreach (var draw in results)
@@ -144,7 +144,7 @@ namespace NumPicker.Controllers
             return View(model);
 
         }
-        
+
         public IActionResult LuckyForLife()
         {
             // get drawing records  
@@ -184,7 +184,7 @@ namespace NumPicker.Controllers
             var ballCount = _appSettings.LuckyForLife.BallCount;
 
             // calculate next drawing date
-            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Thursday });            
+            var nextDrawDate = CalculateNextDrawDate(new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Thursday });
 
             // build base drawing collection
             foreach (var draw in results)
@@ -218,7 +218,7 @@ namespace NumPicker.Controllers
 
         }
 
-        
+
 
         private List<Drawing> GetAutoPicks(DateTime nextDrawDate, List<BallStat>[] ballStatLists, int maxBallId)
         {
@@ -330,6 +330,9 @@ namespace NumPicker.Controllers
         private DateTime CalculateNextDrawDate(List<DayOfWeek> drawDays)
         {
             var nextDrawDate = DateTime.Now;
+            if (drawDays.Contains(nextDrawDate.DayOfWeek))
+                return nextDrawDate;
+
             for (int i = 0; i < 7; i++)
             {
                 nextDrawDate = nextDrawDate.AddDays(1);
@@ -338,7 +341,7 @@ namespace NumPicker.Controllers
             }
             return nextDrawDate;
         }
-        
+
 
 
 
