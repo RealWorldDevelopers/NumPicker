@@ -79,7 +79,7 @@ namespace NumPicker.Controllers
 
          var ballStatsList = BuildStats(maxBallValue, ballCount, drawings, nextDrawDate, maxMegaBallValue);
 
-         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue);
+         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue, true);
 
          var model = BuildViewModel(nextDrawDate, autoPcikList, ballStatsList);
 
@@ -137,7 +137,7 @@ namespace NumPicker.Controllers
 
          var ballStatsList = BuildStats(maxBallValue, ballCount, drawings, nextDrawDate, maxPowerBallValue);
 
-         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue);
+         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue, true);
 
          var model = BuildViewModel(nextDrawDate, autoPcikList, ballStatsList);
 
@@ -210,7 +210,7 @@ namespace NumPicker.Controllers
 
          var ballStatsList = BuildStats(maxBallValue, ballCount, drawings, nextDrawDate, maxLuckyBallValue);
 
-         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue);
+         var autoPcikList = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue, true);
 
          var model = BuildViewModel(nextDrawDate, autoPcikList, ballStatsList);
 
@@ -268,10 +268,9 @@ namespace NumPicker.Controllers
          // build base drawing collection
          foreach (var draw in results)
          {
-            var middayNumbers = draw.midday_numbers.Split(',');
-            var eveningNumbers = draw.evening_numbers.Split(',');
-
             var drawDateTime = draw.draw_date.Value;
+
+            var middayNumbers = draw.midday_numbers.Split(',');
             var middayDrawing = new Drawing { DrawDate = drawDateTime + new TimeSpan(12, 29, 0) };
             foreach (var nbr in middayNumbers)
             {
@@ -283,39 +282,46 @@ namespace NumPicker.Controllers
                };
                middayDrawing.Balls.Add(ball);
             }
+            drawings.Add(middayDrawing);
 
-            var eveningDrawing = new Drawing { DrawDate = drawDateTime + new TimeSpan(19, 29, 0) };
-            foreach (var nbr in eveningNumbers)
+            if (!string.IsNullOrWhiteSpace(draw.evening_numbers))
             {
-               var idx = Array.IndexOf(eveningNumbers, nbr) + 1;
-               var ball = new DrawnBall
+               var eveningNumbers = draw.evening_numbers.Split(',');
+               var eveningDrawing = new Drawing { DrawDate = drawDateTime + new TimeSpan(19, 29, 0) };
+               foreach (var nbr in eveningNumbers)
                {
-                  Id = Convert.ToInt32(nbr),
-                  Seq = idx
-               };
-               eveningDrawing.Balls.Add(ball);
+                  var idx = Array.IndexOf(eveningNumbers, nbr) + 1;
+                  var ball = new DrawnBall
+                  {
+                     Id = Convert.ToInt32(nbr),
+                     Seq = idx
+                  };
+                  eveningDrawing.Balls.Add(ball);
+               }
+               drawings.Add(eveningDrawing);
             }
 
-            drawings.Add(middayDrawing);
-            drawings.Add(eveningDrawing);
          }
 
          var ballStatsList = BuildStats(maxBallValue, ballCount, drawings, nextDrawDate);
 
-         var model = BuildViewModel(nextDrawDate, new List<Drawing>(), ballStatsList);
+         var autoPicks = GetAutoPicks(nextDrawDate, ballStatsList, maxBallValue, false);
+
+         var model = BuildViewModel(nextDrawDate, autoPicks, ballStatsList);
 
          return View(model);
 
       }
 
 
-      private List<Drawing> GetAutoPicks(DateTime nextDrawDate, List<BallStat>[] ballStatLists, int maxBallId)
+      private List<Drawing> GetAutoPicks(DateTime nextDrawDate, List<BallStat>[] ballStatLists, int maxBallId, bool hasSpecialBall)
       {
          var picks = new List<Drawing>();
+         var specialBallFactor = Convert.ToInt32(hasSpecialBall);
 
          var ballList = ballStatLists[ballStatLists.Length - 1];
-         List<BallStat>[] mainBallList = new List<BallStat>[ballStatLists.Length - 1];
-         Array.Copy(ballStatLists, mainBallList, ballStatLists.Length - 1);
+         List<BallStat>[] mainBallList = new List<BallStat>[ballStatLists.Length - specialBallFactor];
+         Array.Copy(ballStatLists, mainBallList, ballStatLists.Length - specialBallFactor);
 
          // calculate ball draws
          var ballMaxScore = ballList.Max(b => b.Score);
@@ -326,31 +332,36 @@ namespace NumPicker.Controllers
          var zoneDraw = new Drawing();
          zoneDraw.DrawDate = nextDrawDate;
          zoneDraw.Balls = ZoneBall(mainBallList, maxBallId);
-         zoneDraw.Balls.Add(ballBestDraw);
+         if (hasSpecialBall)
+            zoneDraw.Balls.Add(ballBestDraw);
          if (!IsPickInList(picks, zoneDraw))
             picks.Add(zoneDraw);
 
-         // Start with Ball 1 and everyone after must be bigger
-         var ascendingDraw = new Drawing();
-         ascendingDraw.DrawDate = nextDrawDate;
-         ascendingDraw.Balls = AscendingBall(mainBallList);
-         ascendingDraw.Balls.Add(ballBestDraw);
-         if (!IsPickInList(picks, ascendingDraw))
-            picks.Add(ascendingDraw);
+         if (hasSpecialBall)
+         {
+            // Start with Ball 1 and everyone after must be bigger
+            var ascendingDraw = new Drawing();
+            ascendingDraw.DrawDate = nextDrawDate;
+            ascendingDraw.Balls = AscendingBall(mainBallList);
+            ascendingDraw.Balls.Add(ballBestDraw);
+            if (!IsPickInList(picks, ascendingDraw))
+               picks.Add(ascendingDraw);
 
-         // Reverse Logic of Ascending Picks
-         var desendingDraw = new Drawing();
-         desendingDraw.DrawDate = nextDrawDate;
-         desendingDraw.Balls = DesendingBall(mainBallList, maxBallId);
-         desendingDraw.Balls.Add(ballBestDraw);
-         if (!IsPickInList(picks, desendingDraw))
-            picks.Add(desendingDraw);
+            // Reverse Logic of Ascending Picks
+            var desendingDraw = new Drawing();
+            desendingDraw.DrawDate = nextDrawDate;
+            desendingDraw.Balls = DesendingBall(mainBallList, maxBallId);
+            desendingDraw.Balls.Add(ballBestDraw);
+            if (!IsPickInList(picks, desendingDraw))
+               picks.Add(desendingDraw);
+         }
 
          // Best Ball in each list no order no repeat
          var bestBallDraw = new Drawing();
          bestBallDraw.DrawDate = nextDrawDate;
          bestBallDraw.Balls = BestBall(mainBallList);
-         bestBallDraw.Balls.Add(ballBestDraw);
+         if (hasSpecialBall)
+            bestBallDraw.Balls.Add(ballBestDraw);
          if (!IsPickInList(picks, bestBallDraw))
             picks.Add(bestBallDraw);
 
@@ -383,13 +394,13 @@ namespace NumPicker.Controllers
             var positionStats = new BallsStats();
             for (int pos = 1; pos <= ballCount; pos++)
             {
-               var ball = CalcBallPositionStats(ballNbr, pos, drawings, nextDrawDate);
+               var ball = CalcBallPositionStats(ballNbr, pos, drawings, nextDrawDate, false);
                positionStats.Balls.Add(ball);
             }
 
             if (ballNbr <= maxSpecialBallValue)
             {
-               var ball = CalcBallPositionStats(ballNbr, ballCount + 1, drawings, nextDrawDate);
+               var ball = CalcBallPositionStats(ballNbr, ballCount + 1, drawings, nextDrawDate, false);
                positionStats.Balls.Add(ball);
             }
             ballStatList.Add(positionStats);
@@ -433,7 +444,7 @@ namespace NumPicker.Controllers
             var positionStats = new BallsStats();
             for (int pos = 1; pos <= ballCount; pos++)
             {
-               var ball = CalcBallPositionStats(ballNbr, pos, drawings, nextDrawDate);
+               var ball = CalcBallPositionStats(ballNbr, pos, drawings, nextDrawDate, true);
                positionStats.Balls.Add(ball);
             }
 
@@ -629,7 +640,7 @@ namespace NumPicker.Controllers
 
 
 
-      private BallStat CalcBallPositionStats(int ballNbr, int position, List<Drawing> allDrawings, DateTime nextPickDate)
+      private BallStat CalcBallPositionStats(int ballNbr, int position, List<Drawing> allDrawings, DateTime nextPickDate, bool dailyDrawing)
       {
          var totalDrawings = allDrawings.Count;
          var positionStats = new BallsStats();
@@ -639,10 +650,10 @@ namespace NumPicker.Controllers
          if (snglBallDrawings.Count == 0)
             return new BallStat { Position = position, Id = ballNbr, Score = 99999 };
          else
-            return CalcBallScore(ballNbr, position, snglBallDrawings, totalDrawings, nextPickDate);
+            return CalcBallScore(ballNbr, position, snglBallDrawings, totalDrawings, nextPickDate, dailyDrawing);
       }
 
-      private BallStat CalcBallScore(int ballNbr, int position, List<Drawing> drawingsByPosition, int totalDrawings, DateTime nextPickDate)
+      private BallStat CalcBallScore(int ballNbr, int position, List<Drawing> drawingsByPosition, int totalDrawings, DateTime nextPickDate, bool dailyDrawing)
       {
          var ballStat = new BallStat
          {
@@ -658,20 +669,33 @@ namespace NumPicker.Controllers
          // how often does number come up
          var dueInDrawingsCount = totalDrawings / drawingsByPosition.Count;
 
-         // set begging score.  More often number comes up the better the score
+         // set beginning score.  More often number comes up the better the score
          ballStat.Score = Convert.ToInt32(drawingsByPosition.Count / Convert.ToDouble(totalDrawings) * 100);
 
          // determine next due date
          var dueDraw = ballStat.LastHit;
-         for (int ii = 1; ii < dueInDrawingsCount; ii++)
+         if (dailyDrawing)
          {
-            if (dueDraw.DayOfWeek == DayOfWeek.Friday)
-               dueDraw = dueDraw.AddDays(4);
-            else
-               dueDraw = dueDraw.AddDays(3);
+            for (int ii = 1; ii < dueInDrawingsCount; ii++)
+            {
+               if (dueDraw.Hour == 19)
+                  dueDraw = dueDraw.AddHours(17);
+               else
+                  dueDraw = dueDraw.AddHours(7);
+            }
+            ballStat.Score += Convert.ToInt32((nextPickDate - dueDraw).TotalHours);
          }
-
-         ballStat.Score += Convert.ToInt32((nextPickDate - dueDraw).TotalDays);
+         else
+         {
+            for (int ii = 1; ii < dueInDrawingsCount; ii++)
+            {
+               if (dueDraw.DayOfWeek == DayOfWeek.Friday)
+                  dueDraw = dueDraw.AddDays(4);
+               else
+                  dueDraw = dueDraw.AddDays(3);
+            }
+            ballStat.Score += Convert.ToInt32((nextPickDate - dueDraw).TotalDays);
+         }
 
          return ballStat;
       }
